@@ -1,4 +1,5 @@
 const DELTA: u32 = 0x9e3779b9;
+#[derive(Debug, Clone, PartialEq)]
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TinyEncrypAlg {

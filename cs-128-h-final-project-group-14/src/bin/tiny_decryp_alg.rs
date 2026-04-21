@@ -1,6 +1,6 @@
 const DELTA: u32 = 0x9e3779b9;
-
 #[derive(Debug, Clone, PartialEq)]
+
 pub struct TinyDecrypAlg {
 	pub message: Vec<u32>,
 	pub key: Vec<u32>,

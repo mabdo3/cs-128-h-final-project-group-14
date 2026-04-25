@@ -8,14 +8,66 @@ mod elliptic_encryp_alg;
 use tiny_encryp_alg::TinyEncrypAlg;
 use subs_encryp_alg::SubstitutionEncrypt;
 use elliptic_encryp_alg::EllipticCurveAlg;
+
+use tiny_decryp_alg::TinyDecrypAlg;
+
+use subs_decryp_alg::SubstitutionDecrypt;
+use elliptic_decryp_alg::EllipticDecryptAlg;
+use elliptic_decryp_alg::Point;
 use std::io;
 use std::collections::HashMap;
 use core::result::Result;
+use std::str::FromStr;
+
+impl FromStr for Point {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.trim();
+        if s.eq_ignore_ascii_case("inf") || s.eq_ignore_ascii_case("infinity") {
+            return Ok(Point::infinity());
+        }
+        let mut parts = s.split(',');
+        let x_str = parts.next().ok_or("Missing X coordinate")?.trim();
+        let y_str = parts.next().ok_or("Missing Y coordinate")?.trim();
+
+        let x = x_str.parse::<i64>().map_err(|_| format!("Invalid X: {x_str}"))?;
+        let y = y_str.parse::<i64>().map_err(|_| format!("Invalid Y: {y_str}"))?;
+
+        Ok(Point { x, y, infinity: false })
+    }
+}
+
+fn parse_point_pairs(input: &str) -> Result<Vec<(Point, Point)>, String> {
+    input
+        .split('|')
+        .map(|pair_str| pair_str.trim())
+        .filter(|s| !s.is_empty())
+        .map(|pair_str| {
+            let mut points = pair_str.split(';');
+            
+            let p1_str = points.next().ok_or("Missing first point in pair")?;
+            let p2_str = points.next().ok_or("Missing second point in pair")?;
+            
+            if points.next().is_some() {
+                return Err("A pair cannot contain more than two points".to_string());
+            }
+            let p1 = p1_str.parse::<Point>()?;
+            let p2 = p2_str.parse::<Point>()?;
+
+            Ok((p1, p2))
+        })
+        .collect()
+}
 
 fn main() {
     let mut tiny_keys: Vec<TinyEncrypAlg> = Vec::new();
     let mut subs_keys: Vec<SubstitutionEncrypt> = Vec::new();
     let mut elliptic_keys: Vec<EllipticCurveAlg> = Vec::new();
+
+    let mut tiny_decryp_keys: Vec<TinyDecrypAlg> = Vec::new();
+    let mut subs_decryp_keys: Vec<SubstitutionDecrypt> = Vec::new();
+    let mut elliptic_decryp_keys: Vec<EllipticDecryptAlg> = Vec::new();
 
 
     println!("Do you want to encrypt or decrpt?");
@@ -65,28 +117,54 @@ fn main() {
         },
 
         decrypt => {
-            println!("Enter your message: ");
+            println!("Enter your encrypted message. \n\n\
+            If your choice of decryption is Elliptic curve, format your curve as follows:\n  \
+                • Use '|' to separate each tuple pair.\n  \
+                • Use ';' to separate the first and second Point in a pair.\n  \
+                • Use ',' to separate X and Y coordinates.\n  \
+                • Use 'inf' or 'infinity' to represent a point at infinity.\n\n\
+                Example: 3,6;10,85 | inf;12,34");
+
             let mut message = String::new();
             io::stdin().read_line(&mut message).expect("Failed to read line");
 
             println!("Enter your deryption choice (Tiny Encryption, Substitution, Elliptic Curve): ");
             let mut decryp_type = String::new();
             io::stdin().read_line(&mut decryp_type).expect("Failed to read line");
+
+            println!(
+                "Enter a string for your key."
+            );
+            let mut key = String::new();
+            io::stdin().read_line(&mut key).expect("Failed to read line");
     
             let tiny = String::from("Tiny Encryption");
             let subs = String::from("Substitution");
             let elliptic = String::from("Elliptic");
             match decryp_type {
                  tiny => { 
-                    println!("Enter a string for your key: ");
-                    let mut key = String::new();
-                    io::stdin().read_line(&mut key).expect("Failed to read line");
+                    let mut tiny_decryp_alg = TinyDecrypAlg::new(message, key);
+                    tiny_decryp_alg.decrypt();
+                    println!("Here is your encrypted message: {}", &tiny_decryp_alg.decrypted);
+                    tiny_decryp_keys.push(tiny_decryp_alg);
                  },
                  subs => {
-                     println!("Enter a string for your key: ");
+                    let mut subs_decryp_alg = SubstitutionDecrypt::new(message, key);
+                     subs_decryp_alg.decrypt();
+                     println!("Here is your encrypted message: {}", &subs_decryp_alg.decrypted);
+                     subs_decryp_keys.push(subs_decryp_alg);
                  },
                  elliptic => {
-                     println!("Enter a number for your key: ");
+                    let int_key = key.parse::<i64>().expect("Not a number");
+                    match parse_point_pairs(&message) {
+                        Ok(vector) => {
+                            let mut elliptic_decryp_alg = EllipticDecryptAlg::new(vector, int_key);
+                            elliptic_decryp_alg.decrypt();
+                            println!("Here is your encrypted message: {:?}", &elliptic_decryp_alg.decrypted);
+                            elliptic_decryp_keys.push(elliptic_decryp_alg);
+                        }
+                        Err(e) => eprintln!("Failed to parse: {}", e),
+                    }
                  },
             };
         },

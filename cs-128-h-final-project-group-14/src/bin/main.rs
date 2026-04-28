@@ -7,7 +7,7 @@ mod elliptic_encryp_alg;
 
 use tiny_encryp_alg::TinyEncrypAlg;
 use subs_encryp_alg::SubstitutionEncrypt;
-use elliptic_encryp_alg::EllipticCurveAlg;
+use elliptic_encryp_alg::EllipticEncryptAlg;
 
 use tiny_decryp_alg::TinyDecrypAlg;
 
@@ -15,7 +15,7 @@ use subs_decryp_alg::SubstitutionDecrypt;
 use elliptic_decryp_alg::EllipticDecryptAlg;
 use elliptic_decryp_alg::Point;
 use std::io;
-use std::collections::HashMap;
+//use std::collections::HashMap;
 use core::result::Result;
 use std::str::FromStr;
 
@@ -63,7 +63,7 @@ fn parse_point_pairs(input: &str) -> Result<Vec<(Point, Point)>, String> {
 fn main() {
     let mut tiny_keys: Vec<TinyEncrypAlg> = Vec::new();
     let mut subs_keys: Vec<SubstitutionEncrypt> = Vec::new();
-    let mut elliptic_keys: Vec<EllipticCurveAlg> = Vec::new();
+    let mut elliptic_keys: Vec<EllipticEncryptAlg> = Vec::new();
 
     let mut tiny_decryp_keys: Vec<TinyDecrypAlg> = Vec::new();
     let mut subs_decryp_keys: Vec<SubstitutionDecrypt> = Vec::new();
@@ -86,29 +86,38 @@ fn main() {
             let mut encryp_type = String::new();
             io::stdin().read_line(&mut encryp_type).expect("Failed to read line");
 
-            println!("Enter a string for your key: ");
-            let mut key = String::new();
-            io::stdin().read_line(&mut key).expect("Failed to read line");
+        
     
             let tiny = String::from("Tiny Encryption");
             let subs = String::from("Substitution");
             let elliptic = String::from("Elliptic");
             match encryp_type {
                  tiny => { 
+                    println!("Enter a string for your key: ");
+                    let mut key = String::new();
+                    io::stdin().read_line(&mut key).expect("Failed to read line");
                     let mut tiny_encryp_alg = TinyEncrypAlg::new(message, key);
                     tiny_encryp_alg.encrypt();
                     println!("Here is your encrypted message: {}", &tiny_encryp_alg.encrypted);
                     tiny_keys.push(tiny_encryp_alg);
                   },
                  subs => {
+                    println!("Enter a string for your key: ");
+                    let mut key = String::new();
+                    io::stdin().read_line(&mut key).expect("Failed to read line");
                      let mut subs_encryp_alg = SubstitutionEncrypt::new(message, key);
                      subs_encryp_alg.encrypt();
                      println!("Here is your encrypted message: {}", &subs_encryp_alg.encrypted);
                      subs_keys.push(subs_encryp_alg);
                  },
                  elliptic => {
-                     let int_key = key.parse::<i64>().expect("Not a number");
-                     let mut elliptic_encryp_alg = EllipticCurveAlg::new(message, int_key);
+                    println!("Enter an x value: ");
+                    let mut point_x = String::new(); 
+                    io::stdin().read_line(&mut point_x).expect("Failed to read line");
+                    println!("Enter an y value: ");
+                    let mut point_y = String::new(); 
+                    io::stdin().read_line(&mut point_y).expect("Failed to read line");
+                     let mut elliptic_encryp_alg = EllipticEncryptAlg::new(message, point_x, point_y);
                      elliptic_encryp_alg.encrypt();
                      println!("Here is your encrypted message: {:?}", &elliptic_encryp_alg.encrypted);
                      elliptic_keys.push(elliptic_encryp_alg);

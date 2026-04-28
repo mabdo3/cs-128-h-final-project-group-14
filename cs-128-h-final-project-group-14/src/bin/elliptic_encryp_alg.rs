@@ -1,7 +1,6 @@
-use rand::rngs::OsRng;
-use rand::Rng;
+use std::collections::HashMap;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Point {
     pub x: i64,
     pub y: i64,
@@ -9,17 +8,21 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn infinity() -> Self {
-        Point { x: 0, y: 0, infinity: true }
+    pub fn new(ex: String, why: String) -> Self {
+        if ex == "infinity" || why == "infinity" {
+            return Self::infinity(); 
+        } 
+        let x = ex.parse::<i64>().expect("Not a number"); 
+        let y = why.parse::<i64>().expect("Not a number"); 
+        return Self{x: x, y: y, infinity: false}; 
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct EllipticCurveAlg {
-    pub message: Vec<u8>,
-    pub private_key: i64,
-    pub public_key: Point,
-    pub encrypted: Vec<(Point, Point)>,
+    pub fn infinity() -> Self {
+        Point {
+            x: 0,
+            y: 0,
+            infinity: true,
+        }
+    }
 }
 
 const A: i64 = 2;
@@ -31,60 +34,81 @@ const GENERATOR: Point = Point {
     infinity: false,
 };
 
-impl EllipticCurveAlg {
+#[derive(Debug)]
+pub struct EllipticEncryptAlg {
+    pub public_key_one: String,
+    pub public_key_two: String, 
+    pub plaintext: String,
+    pub encrypted: Vec<(Point, Point)>,
+    lookup: HashMap<u8, Point>,
+}
 
-    pub fn new(message_string: String, private_key: i64) -> Self {
+impl EllipticEncryptAlg {
 
-        let public_key = Self::scalar_mult(private_key, GENERATOR);
 
-        EllipticCurveAlg {
-            message: message_string.into_bytes(),
-            private_key,
-            public_key,
+    pub fn new(plaintext: String, public_key_one: String, public_key_two: String) -> Self {
+        Self {
+            plaintext,
+            public_key_one,
+            public_key_two,
             encrypted: Vec::new(),
+            lookup: Self::build_lookup(),
         }
     }
 
+    fn build_lookup() -> HashMap<u8, Point> {
+        let mut map = HashMap::new();
 
-fn mod_inv(x: i64) -> i64 {
+        for i in 0..=255 {
+            let p = Self::scalar_mult(i as i64, GENERATOR);
+            map.insert(i, p);
+        }
+
+        map
+    }
+
+    fn mod_inv(x: i64) -> i64 {
+        let x = (x % P + P) % P;
+
         for i in 1..P {
             if (x * i) % P == 1 {
                 return i;
             }
         }
-    0
-}
-
-fn point_add(p1: Point, p2: Point) -> Point {
-
-    if p1.infinity { return p2; }
-    if p2.infinity { return p1; }
-
-    if p1.x == p2.x && (p1.y + p2.y) % P == 0 {
-        return Point::infinity();
+        0
     }
 
-    let lambda = if p1 == p2 {
-        let num = (3 * p1.x * p1.x + A) % P;
-        let den = Self::mod_inv(2 * p1.y % P);
-        (num * den) % P
-    } else {
-        let num = (p2.y - p1.y) % P;
-        let den = Self::mod_inv((p2.x - p1.x) % P);
-        (num * den) % P
-    };
+    fn point_add(p1: Point, p2: Point) -> Point {
 
-    let x3 = (lambda * lambda - p1.x - p2.x) % P;
-    let y3 = (lambda * (p1.x - x3) - p1.y) % P;
+        if p1.infinity { return p2; }
+        if p2.infinity { return p1; }
 
-    Point {
-        x: (x3 + P) % P,
-         y: (y3 + P) % P,
-         infinity: false,
+        if p1.x == p2.x && (p1.y + p2.y) % P == 0 {
+            return Point::infinity();
+        }
+
+        let lambda = if p1 == p2 {
+            let num = (3 * p1.x * p1.x + A) % P;
+            let den = Self::mod_inv((2 * p1.y) % P);
+            (num * den) % P
+        } else {
+            let num = (p2.y - p1.y) % P;
+            let den = Self::mod_inv((p2.x - p1.x) % P);
+            (num * den) % P
+        };
+
+        let x3 = (lambda * lambda - p1.x - p2.x) % P;
+        let y3 = (lambda * (p1.x - x3) - p1.y) % P;
+
+        Point {
+            x: (x3 + P) % P,
+            y: (y3 + P) % P,
+            infinity: false,
+        }
     }
-}
 
-fn scalar_mult(mut k: i64, mut point: Point) -> Point {
+
+    fn scalar_mult(mut k: i64, mut point: Point) -> Point {
         let mut result = Point::infinity();
 
         while k > 0 {
@@ -95,27 +119,30 @@ fn scalar_mult(mut k: i64, mut point: Point) -> Point {
             k /= 2;
         }
 
-    result
-}
+        result
+    }
 
-pub fn encrypt(&mut self) {
+    fn random_k() -> i64 {
+        use std::time::{SystemTime, UNIX_EPOCH};
 
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .subsec_nanos();
+
+        (nanos as i64 % (P - 1)) + 1
+    }
+
+
+    pub fn encrypt(&mut self) {
         self.encrypted.clear();
-
-        let mut rng = OsRng;
-
-        for &byte in &self.message {
-
-            
-            let m_point = Self::scalar_mult(byte as i64, GENERATOR);
-
-            let k: i64 = rng.gen_range(1..P);
-
+        for byte in self.plaintext.bytes() {
+            let m_point = self.lookup[&byte];
+            let k = Self::random_k();
             let c1 = Self::scalar_mult(k, GENERATOR);
-            let shared = Self::scalar_mult(k, self.public_key);
-
+            let p = Point::new(self.public_key_one.clone(), self.public_key_two.clone()); 
+            let shared = Self::scalar_mult(k, p);
             let c2 = Self::point_add(m_point, shared);
-
             self.encrypted.push((c1, c2));
         }
     }

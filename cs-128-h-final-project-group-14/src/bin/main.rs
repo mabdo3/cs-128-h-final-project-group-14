@@ -74,10 +74,8 @@ fn main() {
     let mut encrypt_or_decrypt = String::new();
     io::stdin().read_line(&mut encrypt_or_decrypt).expect("Failed to read line");
 
-    let encrypt = String::from("encrypt");
-    let decrypt = String::from("decrypt");
-    match encrypt_or_decrypt {
-        encrypt => {
+    match encrypt_or_decrypt.trim() {
+        "encrypt" => {
             println!("Enter your message: ");
             let mut message = String::new();
             io::stdin().read_line(&mut message).expect("Failed to read line");
@@ -88,11 +86,8 @@ fn main() {
 
         
     
-            let tiny = String::from("Tiny Encryption");
-            let subs = String::from("Substitution");
-            let elliptic = String::from("Elliptic");
-            match encryp_type {
-                 tiny => { 
+            match encryp_type.trim() {
+                 "Tiny Encryption" => { 
                     println!("Enter a string for your key: ");
                     let mut key = String::new();
                     io::stdin().read_line(&mut key).expect("Failed to read line");
@@ -101,7 +96,7 @@ fn main() {
                     println!("Here is your encrypted message: {}", &tiny_encryp_alg.encrypted);
                     tiny_keys.push(tiny_encryp_alg);
                   },
-                 subs => {
+                 "Substitution" => {
                     println!("Enter a string for your key: ");
                     let mut key = String::new();
                     io::stdin().read_line(&mut key).expect("Failed to read line");
@@ -110,7 +105,7 @@ fn main() {
                      println!("Here is your encrypted message: {}", &subs_encryp_alg.encrypted);
                      subs_keys.push(subs_encryp_alg);
                  },
-                 elliptic => {
+                 "Elliptic" => {
                     println!("Enter an x value: ");
                     let mut point_x = String::new(); 
                     io::stdin().read_line(&mut point_x).expect("Failed to read line");
@@ -122,10 +117,11 @@ fn main() {
                      println!("Here is your encrypted message: {:?}", &elliptic_encryp_alg.encrypted);
                      elliptic_keys.push(elliptic_encryp_alg);
                  },
+                 _ => (),
             };
         },
 
-        decrypt => {
+        "decrypt" => {
             println!("Enter your encrypted message. \n\n\
             If your choice of decryption is Elliptic curve, format your curve as follows:\n  \
                 • Use '|' to separate each tuple pair.\n  \
@@ -147,23 +143,20 @@ fn main() {
             let mut key = String::new();
             io::stdin().read_line(&mut key).expect("Failed to read line");
     
-            let tiny = String::from("Tiny Encryption");
-            let subs = String::from("Substitution");
-            let elliptic = String::from("Elliptic");
-            match decryp_type {
-                 tiny => { 
+            match decryp_type.trim() {
+                "Tiny Encryption" => { 
                     let mut tiny_decryp_alg = TinyDecrypAlg::new(message, key);
                     tiny_decryp_alg.decrypt();
                     println!("Here is your encrypted message: {}", &tiny_decryp_alg.decrypted);
                     tiny_decryp_keys.push(tiny_decryp_alg);
                  },
-                 subs => {
+                 "Substitution" => {
                     let mut subs_decryp_alg = SubstitutionDecrypt::new(message, key);
                      subs_decryp_alg.decrypt();
                      println!("Here is your encrypted message: {}", &subs_decryp_alg.decrypted);
                      subs_decryp_keys.push(subs_decryp_alg);
                  },
-                 elliptic => {
+                 "Elliptic" => {
                     let int_key = key.parse::<i64>().expect("Not a number");
                     match parse_point_pairs(&message) {
                         Ok(vector) => {
@@ -175,8 +168,10 @@ fn main() {
                         Err(e) => eprintln!("Failed to parse: {}", e),
                     }
                  },
+                 _ => (),
             };
         },
+        _ => (),
     };
 
 }

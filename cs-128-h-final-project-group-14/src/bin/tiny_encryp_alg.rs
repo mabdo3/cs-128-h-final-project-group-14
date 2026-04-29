@@ -30,7 +30,7 @@ impl TinyEncrypAlg {
 		}
 		self.encrypted = match String::from_utf8(x.into_iter().map(|b| b as u8).collect()) {
 			Ok(y) => y,
-			Err(_FromUtf8Error) => String::new(),
+			Err(_from_utf_8_error) => String::new(),
 		};
 	}
 }

@@ -1,36 +1,56 @@
+use base64::{engine::general_purpose, Engine as _};
+
 const DELTA: u32 = 0x9e3779b9;
-
-
 #[derive(Debug, Clone, PartialEq)]
+
 pub struct TinyEncrypAlg {
 	pub message: Vec<u32>,
-	pub key: Vec<u32>,
+	pub key: [u32; 4],
 	pub encrypted: String,
 }
 
 impl TinyEncrypAlg {
 	pub fn new(message_string: String, key_string: String) -> TinyEncrypAlg {
-		let message = message_string.clone().into_bytes().into_iter().map(|b| b as u32).collect();
-		let key = key_string.clone().into_bytes().into_iter().map(|b| b as u32).collect();
+		let message = Self::pad(message_string.into_bytes()).chunks_exact(4).map(|b| {(b[0] as u32) | ((b[1] as u32) << 8) | ((b[2] as u32) << 16) | ((b[3] as u32) << 24)}).collect();
+		let key = Self::key_from_str(&key_string);
 		TinyEncrypAlg{message, key, encrypted: String::new()}	
+	}
+
+	pub fn key_from_str(s: &str) -> [u32; 4] {
+        let mut b = [0u8; 16];
+        let s = s.as_bytes();
+        let len = s.len().min(16);
+        b[..len].copy_from_slice(&s[..len]);
+        [
+            u32::from_le_bytes(b[0..4].try_into().unwrap()),
+            u32::from_le_bytes(b[4..8].try_into().unwrap()),
+            u32::from_le_bytes(b[8..12].try_into().unwrap()),
+            u32::from_le_bytes(b[12..16].try_into().unwrap()),
+        ]
+    }
+
+	pub fn pad(mut data: Vec<u8>) -> Vec<u8> {
+		let pad_len = 8 - (data.len() % 8);
+		let pad_len = if pad_len == 0 { 8 } else { pad_len };
+		data.extend(std::iter::repeat(pad_len as u8).take(pad_len));
+		data
 	}
 
 	pub fn encrypt(&mut self) {
 		let mut x = self.message.clone();
-		for chunk in x.chunks_mut(2) {
+		for chunk in x.chunks_exact_mut(2) {
 			let mut v0 = chunk[0];
 			let mut v1 = chunk[1];
-			let mut sum = 0;
-			for _j in 0..32 {
-				sum += DELTA;
-				v0 += ((v1 << 4) + self.key[0]) ^ (v1 + sum) ^ ((v1 >> 5) + self.key[1]);
-				v1 += ((v0 << 4) + self.key[2]) ^ (v0 + sum) ^ ((v0 >> 5) + self.key[3]);
+			let mut sum: u32 = 0;
+			for _ in 0..32 {
+				sum = sum.wrapping_add(DELTA);
+				v0 = v0.wrapping_add(((v1 << 4).wrapping_add(self.key[0])) ^ (v1.wrapping_add(sum)) ^ ((v1 >> 5).wrapping_add(self.key[1])));
+				v1 = v1.wrapping_add(((v0 << 4).wrapping_add(self.key[2])) ^ (v0.wrapping_add(sum)) ^ ((v0 >> 5).wrapping_add(self.key[3])));
 			}
-
+			chunk[0] = v0;
+			chunk[1] = v1;
 		}
-		self.encrypted = match String::from_utf8(x.into_iter().map(|b| b as u8).collect()) {
-			Ok(y) => y,
-			Err(_from_utf_8_error) => String::new(),
-		};
+		let bytes: &[u8] = bytemuck::cast_slice(&x); 
+		self.encrypted = general_purpose::STANDARD.encode(bytes);
 	}
 }

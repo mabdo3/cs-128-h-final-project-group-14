@@ -69,109 +69,120 @@ fn main() {
     let mut subs_decryp_keys: Vec<SubstitutionDecrypt> = Vec::new();
     let mut elliptic_decryp_keys: Vec<EllipticDecryptAlg> = Vec::new();
 
+    let mut keep_looping = true;
 
-    println!("Do you want to encrypt or decrpt?");
-    let mut encrypt_or_decrypt = String::new();
-    io::stdin().read_line(&mut encrypt_or_decrypt).expect("Failed to read line");
+    while keep_looping {
+        println!("Do you want to encrypt or decrypt? (Enter 'stop' to exit)");
+        let mut encrypt_or_decrypt = String::new();
+        io::stdin().read_line(&mut encrypt_or_decrypt).expect("Failed to read line");
 
-    match encrypt_or_decrypt.trim() {
-        "encrypt" => {
-            println!("Enter your message: ");
-            let mut message = String::new();
-            io::stdin().read_line(&mut message).expect("Failed to read line");
+        match encrypt_or_decrypt.trim() {
+            "encrypt" => {
+                println!("Enter your message: ");
+                let mut message = String::new();
+                io::stdin().read_line(&mut message).expect("Failed to read line");
 
-            println!("Enter your enryption choice (Tiny Encryption, Substitution, Elliptic Curve): ");
-            let mut encryp_type = String::new();
-            io::stdin().read_line(&mut encryp_type).expect("Failed to read line");
+                println!("Enter your enryption choice (Tiny Encryption, Substitution, Elliptic Curve): ");
+                let mut encryp_type = String::new();
+                io::stdin().read_line(&mut encryp_type).expect("Failed to read line");
 
+            
         
-    
-            match encryp_type.trim() {
-                 "Tiny Encryption" => { 
-                    println!("Enter a string for your key: ");
-                    let mut key = String::new();
-                    io::stdin().read_line(&mut key).expect("Failed to read line");
-                    let mut tiny_encryp_alg = TinyEncrypAlg::new(message, key);
-                    tiny_encryp_alg.encrypt();
-                    println!("Here is your encrypted message: {}", &tiny_encryp_alg.encrypted);
-                    tiny_keys.push(tiny_encryp_alg);
-                  },
-                 "Substitution" => {
-                    println!("Enter a string for your key: ");
-                    let mut key = String::new();
-                    io::stdin().read_line(&mut key).expect("Failed to read line");
-                     let mut subs_encryp_alg = SubstitutionEncrypt::new(message, key);
-                     subs_encryp_alg.encrypt();
-                     println!("Here is your encrypted message: {}", &subs_encryp_alg.encrypted);
-                     subs_keys.push(subs_encryp_alg);
-                 },
-                 "Elliptic" => {
-                    println!("Enter an x value: ");
-                    let mut point_x = String::new(); 
-                    io::stdin().read_line(&mut point_x).expect("Failed to read line");
-                    println!("Enter an y value: ");
-                    let mut point_y = String::new(); 
-                    io::stdin().read_line(&mut point_y).expect("Failed to read line");
-                     let mut elliptic_encryp_alg = EllipticEncryptAlg::new(message, point_x, point_y);
-                     elliptic_encryp_alg.encrypt();
-                     println!("Here is your encrypted message: {:?}", &elliptic_encryp_alg.encrypted);
-                     elliptic_keys.push(elliptic_encryp_alg);
-                 },
-                 _ => (),
-            };
-        },
+                match encryp_type.trim() {
+                    "Tiny Encryption" => { 
+                        println!("Enter a string for your key: ");
+                        let mut key = String::new();
+                        io::stdin().read_line(&mut key).expect("Failed to read line");
+                        let mut tiny_encryp_alg = TinyEncrypAlg::new(message, key);
+                        tiny_encryp_alg.encrypt();
+                        println!("Here is your encrypted message: {}", &tiny_encryp_alg.encrypted);
+                        tiny_keys.push(tiny_encryp_alg);
+                    },
+                    "Substitution" => {
+                        println!("Enter a string for your key: ");
+                        let mut key = String::new();
+                        io::stdin().read_line(&mut key).expect("Failed to read line");
+                        let mut subs_encryp_alg = SubstitutionEncrypt::new(message, key);
+                        subs_encryp_alg.encrypt();
+                        println!("Here is your encrypted message: {}", &subs_encryp_alg.encrypted);
+                        subs_keys.push(subs_encryp_alg);
+                    },
+                    "Elliptic" => {
+                        println!("Enter an x value: ");
+                        let mut point_x = String::new(); 
+                        io::stdin().read_line(&mut point_x).expect("Failed to read line");
+                        println!("Enter an y value: ");
+                        let mut point_y = String::new(); 
+                        io::stdin().read_line(&mut point_y).expect("Failed to read line");
+                        let mut elliptic_encryp_alg = EllipticEncryptAlg::new(message, point_x, point_y);
+                        elliptic_encryp_alg.encrypt();
+                        println!("Here is your encrypted message: {:?}", &elliptic_encryp_alg.encrypted);
+                        elliptic_keys.push(elliptic_encryp_alg);
+                    },
+                    _ => {
+                        println!("Invalid encryption method\n");
+                    },
+                };
+            },
 
-        "decrypt" => {
-            println!("Enter your encrypted message. \n\n\
-            If your choice of decryption is Elliptic curve, format your curve as follows:\n  \
-                • Use '|' to separate each tuple pair.\n  \
-                • Use ';' to separate the first and second Point in a pair.\n  \
-                • Use ',' to separate X and Y coordinates.\n  \
-                • Use 'inf' or 'infinity' to represent a point at infinity.\n\n\
-                Example: 3,6;10,85 | inf;12,34");
+            "decrypt" => {
+                println!("Enter your encrypted message. \n\n\
+                If your choice of decryption is Elliptic curve, format your curve as follows:\n  \
+                    • Use '|' to separate each tuple pair.\n  \
+                    • Use ';' to separate the first and second Point in a pair.\n  \
+                    • Use ',' to separate X and Y coordinates.\n  \
+                    • Use 'inf' or 'infinity' to represent a point at infinity.\n\n\
+                    Example: 3,6;10,85 | inf;12,34");
 
-            let mut message = String::new();
-            io::stdin().read_line(&mut message).expect("Failed to read line");
+                let mut message = String::new();
+                io::stdin().read_line(&mut message).expect("Failed to read line");
 
-            println!("Enter your deryption choice (Tiny Encryption, Substitution, Elliptic Curve): ");
-            let mut decryp_type = String::new();
-            io::stdin().read_line(&mut decryp_type).expect("Failed to read line");
+                println!("Enter your deryption choice (Tiny Encryption, Substitution, Elliptic Curve): ");
+                let mut decryp_type = String::new();
+                io::stdin().read_line(&mut decryp_type).expect("Failed to read line");
 
-            println!(
-                "Enter a string for your key."
-            );
-            let mut key = String::new();
-            io::stdin().read_line(&mut key).expect("Failed to read line");
-    
-            match decryp_type.trim() {
-                "Tiny Encryption" => { 
-                    let mut tiny_decryp_alg = TinyDecrypAlg::new(message, key);
-                    tiny_decryp_alg.decrypt();
-                    println!("Here is your encrypted message: {}", &tiny_decryp_alg.decrypted);
-                    tiny_decryp_keys.push(tiny_decryp_alg);
-                 },
-                 "Substitution" => {
-                    let mut subs_decryp_alg = SubstitutionDecrypt::new(message, key);
-                     subs_decryp_alg.decrypt();
-                     println!("Here is your encrypted message: {}", &subs_decryp_alg.decrypted);
-                     subs_decryp_keys.push(subs_decryp_alg);
-                 },
-                 "Elliptic" => {
-                    let int_key = key.parse::<i64>().expect("Not a number");
-                    match parse_point_pairs(&message) {
-                        Ok(vector) => {
-                            let mut elliptic_decryp_alg = EllipticDecryptAlg::new(vector, int_key);
-                            elliptic_decryp_alg.decrypt();
-                            println!("Here is your encrypted message: {:?}", &elliptic_decryp_alg.decrypted);
-                            elliptic_decryp_keys.push(elliptic_decryp_alg);
+                println!(
+                    "Enter a string for your key."
+                );
+                let mut key = String::new();
+                io::stdin().read_line(&mut key).expect("Failed to read line");
+        
+                match decryp_type.trim() {
+                    "Tiny Encryption" => { 
+                        let mut tiny_decryp_alg = TinyDecrypAlg::new(message, key);
+                        tiny_decryp_alg.decrypt();
+                        println!("Here is your encrypted message: {}", &tiny_decryp_alg.decrypted);
+                        tiny_decryp_keys.push(tiny_decryp_alg);
+                    },
+                    "Substitution" => {
+                        let mut subs_decryp_alg = SubstitutionDecrypt::new(message, key);
+                        subs_decryp_alg.decrypt();
+                        println!("Here is your encrypted message: {}", &subs_decryp_alg.decrypted);
+                        subs_decryp_keys.push(subs_decryp_alg);
+                    },
+                    "Elliptic" => {
+                        let int_key = key.parse::<i64>().expect("Not a number");
+                        match parse_point_pairs(&message) {
+                            Ok(vector) => {
+                                let mut elliptic_decryp_alg = EllipticDecryptAlg::new(vector, int_key);
+                                elliptic_decryp_alg.decrypt();
+                                println!("Here is your encrypted message: {:?}", &elliptic_decryp_alg.decrypted);
+                                elliptic_decryp_keys.push(elliptic_decryp_alg);
+                            }
+                            Err(e) => eprintln!("Failed to parse: {}", e),
                         }
-                        Err(e) => eprintln!("Failed to parse: {}", e),
-                    }
-                 },
-                 _ => (),
-            };
-        },
-        _ => (),
-    };
+                    },
+                    _ => {
+                        println!("Invalid decryption method\n");
+                    },
+                };
+            },
+            "stop" => { keep_looping = false },
+            _ => {
+                println!("Invalid answer\n");
+            },
+        };
+        println!("\n");
+    }
 
 }

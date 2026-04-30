@@ -61,14 +61,6 @@ fn parse_point_pairs(input: &str) -> Result<Vec<(Point, Point)>, String> {
 }
 
 fn main() {
-    let mut tiny_keys: Vec<TinyEncrypAlg> = Vec::new();
-    let mut subs_keys: Vec<SubstitutionEncrypt> = Vec::new();
-    let mut elliptic_keys: Vec<EllipticEncryptAlg> = Vec::new();
-
-    let mut tiny_decryp_keys: Vec<TinyDecrypAlg> = Vec::new();
-    let mut subs_decryp_keys: Vec<SubstitutionDecrypt> = Vec::new();
-    let mut elliptic_decryp_keys: Vec<EllipticDecryptAlg> = Vec::new();
-
     let mut keep_looping = true;
 
     while keep_looping {
@@ -96,7 +88,6 @@ fn main() {
                         let mut tiny_encryp_alg = TinyEncrypAlg::new(message, key);
                         tiny_encryp_alg.encrypt();
                         println!("Here is your encrypted message: {}", &tiny_encryp_alg.encrypted);
-                        tiny_keys.push(tiny_encryp_alg);
                     },
                     "Substitution" => {
                         println!("Enter a string for your key: ");
@@ -105,7 +96,6 @@ fn main() {
                         let mut subs_encryp_alg = SubstitutionEncrypt::new(message, key);
                         subs_encryp_alg.encrypt();
                         println!("Here is your encrypted message: {}", &subs_encryp_alg.encrypted);
-                        subs_keys.push(subs_encryp_alg);
                     },
                     "Elliptic" => {
                         println!("Enter an x value: ");
@@ -117,7 +107,6 @@ fn main() {
                         let mut elliptic_encryp_alg = EllipticEncryptAlg::new(message, point_x, point_y);
                         elliptic_encryp_alg.encrypt();
                         println!("Here is your encrypted message: {:?}", &elliptic_encryp_alg.encrypted);
-                        elliptic_keys.push(elliptic_encryp_alg);
                     },
                     _ => {
                         println!("Invalid encryption method\n");
@@ -152,13 +141,11 @@ fn main() {
                         let mut tiny_decryp_alg = TinyDecrypAlg::new(message, key);
                         tiny_decryp_alg.decrypt();
                         println!("Here is your encrypted message: {}", &tiny_decryp_alg.decrypted);
-                        tiny_decryp_keys.push(tiny_decryp_alg);
                     },
                     "Substitution" => {
                         let mut subs_decryp_alg = SubstitutionDecrypt::new(message, key);
                         subs_decryp_alg.decrypt();
                         println!("Here is your encrypted message: {}", &subs_decryp_alg.decrypted);
-                        subs_decryp_keys.push(subs_decryp_alg);
                     },
                     "Elliptic" => {
                         let int_key = key.parse::<i64>().expect("Not a number");
@@ -167,7 +154,6 @@ fn main() {
                                 let mut elliptic_decryp_alg = EllipticDecryptAlg::new(vector, int_key);
                                 elliptic_decryp_alg.decrypt();
                                 println!("Here is your encrypted message: {:?}", &elliptic_decryp_alg.decrypted);
-                                elliptic_decryp_keys.push(elliptic_decryp_alg);
                             }
                             Err(e) => eprintln!("Failed to parse: {}", e),
                         }

@@ -129,25 +129,28 @@ fn main() {
                 println!("Enter your deryption choice (Tiny Encryption, Substitution, Elliptic Curve): ");
                 let mut decryp_type = String::new();
                 io::stdin().read_line(&mut decryp_type).expect("Failed to read line");
-
-                println!(
-                    "Enter a string for your key."
-                );
-                let mut key = String::new();
-                io::stdin().read_line(&mut key).expect("Failed to read line");
         
                 match decryp_type.trim() {
                     "Tiny Encryption" => { 
+                        println!("Enter a string for your key.");
+                        let mut key = String::new();
+                        io::stdin().read_line(&mut key).expect("Failed to read line");
                         let mut tiny_decryp_alg = TinyDecrypAlg::new(message, key);
                         tiny_decryp_alg.decrypt();
                         println!("Here is your encrypted message: {}", &tiny_decryp_alg.decrypted);
                     },
                     "Substitution" => {
+                        println!("Enter a string for your key. Make sure your key is 26 characters long and each character is distinct");
+                        let mut key = String::new();
+                        io::stdin().read_line(&mut key).expect("Failed to read line");
                         let mut subs_decryp_alg = SubstitutionDecrypt::new(message, key);
                         subs_decryp_alg.decrypt();
                         println!("Here is your encrypted message: {}", &subs_decryp_alg.decrypted);
                     },
                     "Elliptic" => {
+                        println!("Enter a string for your key.");
+                        let mut key = String::new();
+                        io::stdin().read_line(&mut key).expect("Failed to read line");
                         let int_key = key.parse::<i64>().expect("Not a number");
                         match parse_point_pairs(&message) {
                             Ok(vector) => {

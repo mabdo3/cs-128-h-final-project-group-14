@@ -153,7 +153,7 @@ fn main() {
                             Ok(vector) => {
                                 let mut elliptic_decryp_alg = EllipticDecryptAlg::new(vector, int_key);
                                 elliptic_decryp_alg.decrypt();
-                                println!("Here is your encrypted message: {:?}", &elliptic_decryp_alg.decrypted);
+                                println!("Here is your decrypted message: {:?}", &elliptic_decryp_alg.decrypted);
                             }
                             Err(e) => eprintln!("Failed to parse: {}", e),
                         }

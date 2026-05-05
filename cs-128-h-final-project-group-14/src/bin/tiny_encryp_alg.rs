@@ -19,6 +19,7 @@ impl TinyEncrypAlg {
 	pub fn key_from_str(s: &str) -> [u32; 4] {
         let mut b = [0u8; 16];
         let s = s.as_bytes();
+		assert!(s.len() % 2 == 0, "Invalid block size");
         let len = s.len().min(16);
         b[..len].copy_from_slice(&s[..len]);
         [

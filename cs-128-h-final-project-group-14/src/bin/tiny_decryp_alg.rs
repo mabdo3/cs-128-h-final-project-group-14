@@ -11,8 +11,10 @@ pub struct TinyDecrypAlg {
 
 impl TinyDecrypAlg {
 	pub fn new(message_string: String, key_string: String) -> TinyDecrypAlg {
-		let message_bytes = general_purpose::STANDARD.decode(message_string.trim()).expect("Failed to decode base64");
-		let message: Vec<u32> = message_bytes.chunks_exact(4).map(|b| {(b[0] as u32) | ((b[1] as u32) << 8) | ((b[2] as u32) << 16) | ((b[3] as u32) << 24)}).collect();
+		let message_bytes = general_purpose::STANDARD.decode(message_string).expect("Failed to decode base64");
+		println!("Decoded byte length: {}", message_bytes.len());
+		assert!(message_bytes.len() % 4 == 0,"Decoded data is not aligned to 4 bytes");
+		let message: Vec<u32> = message_bytes.chunks(4).map(|b| {u32::from_le_bytes(b.try_into().unwrap())}).collect();
 		let key = Self::key_from_str(&key_string);
 		TinyDecrypAlg{message, key, decrypted: String::new()}
 	}
@@ -44,6 +46,7 @@ impl TinyDecrypAlg {
 			chunk[0] = v0;
 			chunk[1] = v1;
 		}
+		assert!(x.len() % 2 == 0, "Invalid block size");
 		let mut bytes = Vec::with_capacity(x.len() * 4);
 		for &word in &x {
 			bytes.extend_from_slice(&word.to_le_bytes());

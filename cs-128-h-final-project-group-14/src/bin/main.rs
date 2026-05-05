@@ -37,44 +37,53 @@ fn main() {
     let mut keep_looping = true;
 
     while keep_looping {
+        println!();
         println!("Do you want to encrypt or decrypt? (Enter 'stop' to exit)");
         let mut choice = String::new();
         io::stdin().read_line(&mut choice).expect("Failed");
 
         match choice.trim() {
             "encrypt" => {
+                println!();
                 println!("Enter your message: ");
                 let mut message = String::new();
                 io::stdin().read_line(&mut message).expect("Failed");
 
+                println!();
                 println!("Enter choice (Tiny Encryption, Substitution, Elliptic): ");
                 let mut enc_type = String::new();
                 io::stdin().read_line(&mut enc_type).expect("Failed");
 
                 match enc_type.trim() {
                     "Tiny Encryption" => {
+                        println!();
                         println!("Enter a string for your key: ");
                         let mut key = String::new(); 
                         io::stdin().read_line(&mut key).expect("Failed");
                         let mut alg = TinyEncrypAlg::new(message, key); // example
                         alg.encrypt();
+                        println!();
                         println!("Encrypted: {}", alg.encrypted);
                     },
                     "Substitution" => {
+                        println!();
                         println!("Enter a string for your key: ");
                         let mut key = String::new(); 
                         io::stdin().read_line(&mut key).expect("Failed");
                         let mut alg = SubstitutionEncrypt::new(message, key);
                         alg.encrypt();
+                        println!();
                         println!("Encrypted: {}", alg.encrypted);
                     },
                     "Elliptic" => {
+                        println!();
                         println!("Enter an int key: ");
                         let mut input = String::new();
                         io::stdin().read_line(&mut input).expect("Failed"); 
                         let key = input.trim().parse::<i64>().unwrap_or(0);
                         let mut alg = EllipticEncryptAlg::new(message.trim().to_string(), key);
                         alg.encrypt();
+                        println!();
                         println!("Here is your encrypted message: {}", alg.encrypted);
                     },
                     _ => println!("Invalid choice"),
@@ -82,14 +91,17 @@ fn main() {
             },
 
             "decrypt" => {
+                println!();
                 println!("Enter your encrypted message (e.g., 3,6;10,85 | 12,34;55,21 for Elliptic): ");
                 let mut message = String::new();
                 io::stdin().read_line(&mut message).expect("Failed");
 
+                println!();
                 println!("Enter choice (Tiny Encryption, Substitution, Elliptic): ");
                 let mut dec_type = String::new();
                 io::stdin().read_line(&mut dec_type).expect("Failed");
 
+                println!();
                 println!("Enter your key: ");
                 let mut key_str = String::new();
                 io::stdin().read_line(&mut key_str).expect("Failed");
@@ -98,11 +110,13 @@ fn main() {
                     "Tiny Encryption" => { 
                         let mut alg = TinyDecrypAlg::new(message, key_str.into());
                         alg.decrypt();
+                        println!();
                         println!("Decrypted: {}", alg.decrypted);
                     },
                     "Substitution" => {
                         let mut alg = SubstitutionDecrypt::new(message, key_str.trim().into());
                         alg.decrypt();
+                        println!();
                         println!("Decrypted: {}", alg.decrypted);
                     },
                     "Elliptic" => {
@@ -110,6 +124,7 @@ fn main() {
                         let mut alg = EllipticEncryptAlg::new(String::new(), key_str);
                         alg.encrypted = message.trim().to_string();
                         let decrypted = alg.decrypt();
+                        println!();
                         println!("Here is your decrypted message: {}", decrypted);
                     },
                     _ => println!("Invalid choice"),

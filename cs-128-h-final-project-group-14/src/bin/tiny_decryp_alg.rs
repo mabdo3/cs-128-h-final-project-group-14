@@ -11,11 +11,16 @@ pub struct TinyDecrypAlg {
 
 impl TinyDecrypAlg {
 	pub fn new(message_string: String, key_string: String) -> TinyDecrypAlg {
-		let message_bytes = general_purpose::STANDARD.decode(message_string).expect("Failed to decode base64");
-		println!("Decoded byte length: {}", message_bytes.len());
+		let message_clean: String = message_string.chars()
+        .filter(|c| *c != '\n' && *c != '\r')
+        .collect();
+		let message_bytes = general_purpose::STANDARD.decode(message_clean.clone()).expect("Failed to decode base64");
 		assert!(message_bytes.len() % 4 == 0,"Decoded data is not aligned to 4 bytes");
 		let message: Vec<u32> = message_bytes.chunks(4).map(|b| {u32::from_le_bytes(b.try_into().unwrap())}).collect();
 		let key = Self::key_from_str(&key_string);
+		println!("Base64 input: {}", message_string.clone());
+		println!("Decoded bytes: {}", message_bytes.len());
+		println!("Modulo 8: {}", message_bytes.len() % 8);
 		TinyDecrypAlg{message, key, decrypted: String::new()}
 	}
 
@@ -52,6 +57,11 @@ impl TinyDecrypAlg {
 			bytes.extend_from_slice(&word.to_le_bytes());
 		}
 		println!("Decrypted raw bytes: {:?}", bytes);
+		println!("Decrypted raw bytes:");
+		for b in &bytes {
+			print!("{:02x} ", b);
+		}
+		println!();
 		let bytes = Self::pad_inverse(bytes);
 		self.decrypted = String::from_utf8(bytes).expect("Invalid UTF-8");
 	}

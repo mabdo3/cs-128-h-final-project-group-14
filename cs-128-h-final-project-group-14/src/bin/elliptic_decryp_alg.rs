@@ -1,24 +1,10 @@
 use std::collections::HashMap;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Point {
-    pub x: i64,
-    pub y: i64,
-    pub infinity: bool,
-}
-
-impl Point {
-    pub fn infinity() -> Self {
-        Point {
-            x: 0,
-            y: 0,
-            infinity: true,
-        }
-    }
-}
+use crate::point::Point;
 
 const A: i64 = 2;
 const P: i64 = 97;
+const ALPHABET_START: u8 = 32;
+const ALPHABET_SIZE: u8 = 64;
 
 const GENERATOR: Point = Point {
     x: 3,
@@ -29,32 +15,37 @@ const GENERATOR: Point = Point {
 #[derive(Debug, Clone, PartialEq)]
 pub struct EllipticDecryptAlg {
     pub private_key: i64,
-    pub encrypted: Vec<(Point, Point)>,
+    pub encrypted: String,
     pub decrypted: String,
-    lookup: HashMap<Point, u8>,
+    reverse_lookup: HashMap<Point, u8>,
 }
 
 impl EllipticDecryptAlg {
 
-    pub fn new(data: Vec<(Point, Point)>, private_key: i64) -> Self {
+
+
+   pub fn new(encrypted: String, private_key: i64) -> Self {
+        let (_, reverse_lookup) = Self::build_lookups();
         Self {
-            encrypted: data,
+            encrypted,
             private_key,
             decrypted: String::new(),
-            lookup: Self::build_lookup(),
+            reverse_lookup,
         }
     }
 
 
-    fn build_lookup() -> HashMap<Point, u8> {
-        let mut map = HashMap::new();
+     fn build_lookups() -> (HashMap<u8, Point>, HashMap<Point, u8>) {
+        let mut forward = HashMap::new();
+        let mut reverse = HashMap::new();
 
-        for i in 0..=255 {
-            let p = Self::scalar_mult(i as i64, GENERATOR);
-            map.insert(p, i as u8);
+        for i in 0..ALPHABET_SIZE {
+            let p = Self::scalar_mult((i as i64) + 1, GENERATOR);
+            forward.insert(i, p);
+            reverse.insert(p, i);
         }
 
-        map
+        (forward, reverse)
     }
 
     fn mod_inv(x: i64) -> i64 {
@@ -112,27 +103,59 @@ impl EllipticDecryptAlg {
         result
     }
 
-    pub fn decrypt(&mut self) {
+    fn parse_point(s: &str) ->  Result<Point, String> {
+        let s = s.trim();
+        if s == "inf" {
+            return Ok(Point::infinity());
+        }
+        let mut parts = s.split(',');
+
+        let x_str = parts.next().ok_or("Missing x")?.trim();
+        let y_str = parts.next().ok_or("Missing y")?.trim();
+
+        let x = x_str.parse::<i64>().map_err(|_| format!("Invalid x value: {}", x_str))?;
+
+        let y = y_str.parse::<i64>().map_err(|_| format!("Invalid y value: {}", y_str))?;
+
+        Ok(Point { x, y, infinity: false })
+    }
+
+     pub fn decrypt(&mut self)
+        -> Result<(), Box<dyn std::error::Error>> {
 
         let mut output = Vec::new();
 
-        for (c1, c2) in &self.encrypted {
+        for pair in self.encrypted.split('|') {
 
-            let shared = Self::scalar_mult(self.private_key, *c1);
+            if pair.trim().is_empty() {
+                continue;
+            }
 
-            let inverse_shared = Point {
+            let mut parts = pair.split(':');
+
+            let c1_str = parts.next().ok_or("Missing c1")?;
+            let c2_str = parts.next().ok_or("Missing c2")?;
+
+            let c1 = Self::parse_point(c1_str)?;
+            let c2 = Self::parse_point(c2_str)?;
+
+            let shared = Self::scalar_mult(self.private_key, c1);
+        let inverse_shared = Point {
                 x: shared.x,
                 y: (P - shared.y) % P,
                 infinity: shared.infinity,
             };
 
-            let m_point = Self::point_add(*c2, inverse_shared);
-            if let Some(byte) = self.lookup.get(&m_point) {
-                output.push(*byte);
+            let m_point = Self::point_add(c2, inverse_shared);
+
+            if let Some(byte) = self.reverse_lookup.get(&m_point) {
+                output.push(byte + ALPHABET_START);
             }
         }
 
-        self.decrypted = String::from_utf8(output)
-            .unwrap_or_default();
+        self.decrypted =
+            String::from_utf8_lossy(&output).to_string();
+
+        Ok(())
     }
 }

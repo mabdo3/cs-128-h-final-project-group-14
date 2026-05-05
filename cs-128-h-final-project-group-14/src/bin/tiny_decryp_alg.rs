@@ -25,17 +25,18 @@ impl TinyDecrypAlg {
 	}
 
 	pub fn key_from_str(s: &str) -> [u32; 4] {
-        let mut b = [0u8; 16];
-        let s = s.as_bytes();
-        let len = s.len().min(16);
-        b[..len].copy_from_slice(&s[..len]);
-        [
-            u32::from_le_bytes(b[0..4].try_into().unwrap()),
-            u32::from_le_bytes(b[4..8].try_into().unwrap()),
-            u32::from_le_bytes(b[8..12].try_into().unwrap()),
-            u32::from_le_bytes(b[12..16].try_into().unwrap()),
-        ]
-    }
+		let mut b = [0u8; 16];
+		let bytes = s.as_bytes();
+		let len = bytes.len().min(16);
+		b[..len].copy_from_slice(&bytes[..len]);
+
+		[
+			u32::from_le_bytes(b[0..4].try_into().unwrap()),
+			u32::from_le_bytes(b[4..8].try_into().unwrap()),
+			u32::from_le_bytes(b[8..12].try_into().unwrap()),
+			u32::from_le_bytes(b[12..16].try_into().unwrap()),
+		]
+	}
 
 	pub fn decrypt(&mut self) {
 		let mut x = self.message.clone();
@@ -44,8 +45,18 @@ impl TinyDecrypAlg {
 			let mut v1 = chunk[1];
 			let mut sum = DELTA.wrapping_mul(32);
 			for _ in 0..32 {
-				v1 = v1.wrapping_sub(((v0 << 4).wrapping_add(self.key[2])) ^ (v0.wrapping_add(sum)) ^ ((v0 >> 5).wrapping_add(self.key[3])));
-				v0 = v0.wrapping_sub(((v1 << 4).wrapping_add(self.key[0])) ^ (v1.wrapping_add(sum)) ^ ((v1 >> 5).wrapping_add(self.key[1])));
+				v1 = v1.wrapping_sub(
+					((v0 << 4).wrapping_add(self.key[2]))
+					^ v0.wrapping_add(sum)
+					^ ((v0 >> 5).wrapping_add(self.key[3]))
+				);
+
+				v0 = v0.wrapping_sub(
+					((v1 << 4).wrapping_add(self.key[0]))
+					^ v1.wrapping_add(sum)
+					^ ((v1 >> 5).wrapping_add(self.key[1]))
+				);
+
 				sum = sum.wrapping_sub(DELTA);
 			}
 			chunk[0] = v0;
@@ -67,21 +78,23 @@ impl TinyDecrypAlg {
 	}
 
 	fn pad_inverse(mut data: Vec<u8>) -> Vec<u8> {
-    if let Some(&pad_len) = data.last() {
-        let pad_len = pad_len as usize;
+		if let Some(&pad_len) = data.last() {
+			let pad_len = pad_len as usize;
 
-        if pad_len == 0 || pad_len > 8 || pad_len > data.len() {
-            panic!("Invalid padding");
-        }
+			if pad_len == 0 || pad_len > 8 || pad_len > data.len() {
+				panic!("Invalid padding");
+			}
 
-        if !data[data.len() - pad_len..].iter().all(|&b| b as usize == pad_len) {
-            panic!("Invalid padding content");
-        }
+			let start = data.len().checked_sub(pad_len).expect("Invalid padding length");
 
-        data.truncate(data.len() - pad_len);
-        data
-    } else {
-        panic!("Empty data");
-    }
-}
+			if data[start..].iter().any(|&b| b != pad_len as u8) {
+				panic!("Invalid padding content");
+			}
+
+			data.truncate(data.len() - pad_len);
+			data
+		} else {
+			panic!("Empty data");
+		}
+	}
 }

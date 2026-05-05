@@ -1,6 +1,4 @@
 use base64::{engine::general_purpose, Engine as _};
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 
 const DELTA: u32 = 0x9e3779b9;
 #[derive(Debug, Clone, PartialEq)]
@@ -29,19 +27,16 @@ impl TinyEncrypAlg {
 	}
 
 	pub fn key_from_str(s: &str) -> [u32; 4] {
-		let mut hasher = DefaultHasher::new();
-		s.hash(&mut hasher);
-		let hash = hasher.finish();
-
-		let mut key_bytes = [0u8; 16];
-		key_bytes[..8].copy_from_slice(&hash.to_le_bytes());
-		key_bytes[8..].copy_from_slice(&(!hash).to_le_bytes());
+		let mut b = [0u8; 16];
+		let bytes = s.as_bytes();
+		let len = bytes.len().min(16);
+		b[..len].copy_from_slice(&bytes[..len]);
 
 		[
-			u32::from_le_bytes(key_bytes[0..4].try_into().unwrap()),
-			u32::from_le_bytes(key_bytes[4..8].try_into().unwrap()),
-			u32::from_le_bytes(key_bytes[8..12].try_into().unwrap()),
-			u32::from_le_bytes(key_bytes[12..16].try_into().unwrap()),
+			u32::from_le_bytes(b[0..4].try_into().unwrap()),
+			u32::from_le_bytes(b[4..8].try_into().unwrap()),
+			u32::from_le_bytes(b[8..12].try_into().unwrap()),
+			u32::from_le_bytes(b[12..16].try_into().unwrap()),
 		]
 	}
 
@@ -72,11 +67,6 @@ impl TinyEncrypAlg {
 		for &word in &x {
 			bytes.extend_from_slice(&word.to_le_bytes());
 		}
-		println!("Encrypted raw bytes:");
-		for b in &bytes {
-			print!("{:02x} ", b);
-		}
-		println!();
 		self.encrypted = general_purpose::STANDARD.encode(&bytes);
 	}
 }

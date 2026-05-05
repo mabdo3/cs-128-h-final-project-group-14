@@ -44,14 +44,31 @@ impl TinyDecrypAlg {
 			chunk[0] = v0;
 			chunk[1] = v1;
 		}
-		let bytes: Vec<u8> = Self::pad_inverse(bytemuck::cast_slice(&x).to_vec()); 
-		self.decrypted = String::from_utf8_lossy(&bytes).to_string();
+		let mut bytes = Vec::with_capacity(x.len() * 4);
+		for &word in &x {
+			bytes.extend_from_slice(&word.to_le_bytes());
+		}
+		println!("Decrypted raw bytes: {:?}", bytes);
+		let bytes = Self::pad_inverse(bytes);
+		self.decrypted = String::from_utf8(bytes).expect("Invalid UTF-8");
 	}
 
-	fn pad_inverse(data: Vec<u8>) -> Vec<u8> {
-        let pad_len = *data.last().unwrap() as usize;
-        let mut d = data;
-        d.truncate(d.len() - pad_len);
-        d
+	fn pad_inverse(mut data: Vec<u8>) -> Vec<u8> {
+    if let Some(&pad_len) = data.last() {
+        let pad_len = pad_len as usize;
+
+        if pad_len == 0 || pad_len > 8 || pad_len > data.len() {
+            panic!("Invalid padding");
+        }
+
+        if !data[data.len() - pad_len..].iter().all(|&b| b as usize == pad_len) {
+            panic!("Invalid padding content");
+        }
+
+        data.truncate(data.len() - pad_len);
+        data
+    } else {
+        panic!("Empty data");
     }
+}
 }

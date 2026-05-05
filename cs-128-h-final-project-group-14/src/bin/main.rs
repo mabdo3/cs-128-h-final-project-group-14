@@ -96,7 +96,7 @@ fn main() {
         
                 match dec_type.trim() {
                     "Tiny Encryption" => { 
-                        let mut alg = TinyDecrypAlg::new(message, key_str.trim().into());
+                        let mut alg = TinyDecrypAlg::new(message.trim().to_string(), key_str.trim().into());
                         alg.decrypt();
                         println!("Decrypted: {}", alg.decrypted);
                     },

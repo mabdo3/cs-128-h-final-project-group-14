@@ -50,7 +50,10 @@ impl TinyEncrypAlg {
 			chunk[0] = v0;
 			chunk[1] = v1;
 		}
-		let bytes: &[u8] = bytemuck::cast_slice(&x); 
-		self.encrypted = general_purpose::STANDARD.encode(bytes);
+		let mut bytes = Vec::with_capacity(x.len() * 4);
+		for &word in &x {
+			bytes.extend_from_slice(&word.to_le_bytes());
+		}
+		self.encrypted = general_purpose::STANDARD.encode(&bytes);
 	}
 }

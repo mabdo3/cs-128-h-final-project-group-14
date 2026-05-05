@@ -6,14 +6,6 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn new(ex: String, why: String) -> Self {
-        if ex == "infinity" || why == "infinity" {
-            return Self::infinity(); 
-        } 
-        let x = ex.trim().parse::<i64>().expect("Not a number"); 
-        let y = why.trim().parse::<i64>().expect("Not a number"); 
-        return Self{x: x, y: y, infinity: false}; 
-    }
     pub fn infinity() -> Self {
         Point {
             x: 0,
